@@ -1,0 +1,134 @@
+// Smoke test de render: valida que React monte, que no haya errores de consola,
+// que las imágenes carguen y que los filtros del portafolio funcionen.
+import puppeteer from 'puppeteer-core'
+
+const URL = process.env.URL || 'http://localhost:4173/'
+const CHROME =
+  process.env.CHROME ||
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+const results = []
+const check = (name, pass, detail = '') => {
+  results.push({ name, pass, detail })
+  console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? '  → ' + detail : ''}`)
+}
+
+const browser = await puppeteer.launch({
+  executablePath: CHROME,
+  headless: 'new',
+  args: ['--no-sandbox', '--disable-gpu'],
+})
+
+const page = await browser.newPage()
+await page.setViewport({ width: 1440, height: 900 })
+
+const errores = []
+const warnings = []
+page.on('console', (m) => {
+  if (m.type() === 'error') errores.push(m.text())
+  if (m.type() === 'warning') warnings.push(m.text())
+})
+page.on('pageerror', (e) => errores.push('PAGEERROR: ' + e.message))
+page.on('requestfailed', (r) => {
+  const u = r.url()
+  if (!u.startsWith('data:')) errores.push(`REQFAIL: ${u} (${r.failure()?.errorText})`)
+})
+
+await page.goto(URL, { waitUntil: 'networkidle2', timeout: 60000 })
+await wait(2500)
+
+const t = (sel) => page.$$eval(sel, (n) => n.length).catch(() => 0)
+const txt = (sel) => page.$eval(sel, (n) => n.textContent.trim()).catch(() => '')
+
+check('root montado', (await t('#root > *')) > 0, `${await t('#root > *')} hijos`)
+check('navbar', (await t('.nav__inner')) === 1)
+check('hero título', (await txt('.hero__title')).includes('lugares para vivir'))
+check('hero stats', (await t('.hero__stats li')) === 4)
+check('ticker items', (await t('.ticker__track span')) === 12, `${await t('.ticker__track span')}`)
+check('tarjetas de proyecto', (await t('.pcard')) === 9, `${await t('.pcard')}`)
+check('botones de filtro', (await t('.filter')) === 5, `${await t('.filter')}`)
+check('tarjetas de servicio', (await t('.card-svc')) === 6, `${await t('.card-svc')}`)
+check('items de inversión', (await t('.inv__list li')) === 4, `${await t('.inv__list li')}`)
+check('testimonios', (await t('.quote')) === 3, `${await t('.quote')}`)
+check('tiles de instagram', (await t('.ig')) === 12, `${await t('.ig')}`)
+check('campos del formulario', (await t('.field')) === 5, `${await t('.field')}`)
+check('footer + CADISAL', (await txt('.footer')).includes('CADISAL'))
+check('barra de progreso', (await t('.scroll-progress')) === 1)
+check('botón whatsapp visible tras scroll', await page.evaluate(async () => {
+  window.scrollTo(0, 1200)
+  await new Promise((r) => setTimeout(r, 900))
+  return document.querySelector('.wa') !== null
+}))
+
+const rotas = await page.$$eval('img', (imgs) =>
+  imgs.filter((i) => i.complete && i.naturalWidth === 0).map((i) => i.src)
+)
+check('todas las imágenes cargan', rotas.length === 0, rotas.length ? rotas.join(', ') : '0 rotas')
+
+await page.evaluate(() => window.scrollTo(0, 0))
+await wait(400)
+
+// Filtro del portafolio
+await page.click('.filter:nth-child(3)')
+await wait(1000)
+check('filtro "Departamentos"', (await t('.pcard')) === 2, `${await t('.pcard')} tarjetas`)
+const activo = await page.$eval('.filter.is-active .filter__txt', (n) => n.textContent)
+check('píldora activa correcta', activo.trim() === 'Departamentos', activo.trim())
+
+await page.click('.filter:nth-child(2)')
+await wait(1000)
+check('filtro "Residencial"', (await t('.pcard')) === 4, `${await t('.pcard')} tarjetas`)
+
+await page.click('.filter:nth-child(5)')
+await wait(900)
+check('filtro "Comercial"', (await t('.pcard')) === 2, `${await t('.pcard')} tarjetas`)
+
+await page.click('.filter:nth-child(1)')
+await wait(900)
+check('vuelta a "Todos"', (await t('.pcard')) === 9, `${await t('.pcard')} tarjetas`)
+
+// Validación del formulario
+await page.evaluate(() => document.getElementById('contacto').scrollIntoView())
+await wait(700)
+await page.click('.form button[type=submit]')
+await wait(700)
+check('form marca campos requeridos', (await t('.field.is-invalid')) === 3, `${await t('.field.is-invalid')} inválidos`)
+check('form muestra aviso de consentimiento', (await t('.check.is-invalid')) === 1)
+
+await page.type('#nombre', 'Federico')
+await page.type('#tel', '3875001234')
+await page.type('#email', 'fede@test.com')
+await page.click('#acepto')
+await wait(300)
+await page.click('.form button[type=submit]')
+await wait(900)
+check('form válido muestra confirmación', (await t('.form__ok')) === 1)
+
+// Móvil
+await page.setViewport({ width: 390, height: 844 })
+await page.evaluate(() => window.scrollTo(0, 0))
+await wait(600)
+check('móvil: hamburguesa visible', await page.evaluate(() => {
+  const b = document.getElementById('navToggle')
+  return b && getComputedStyle(b).display !== 'none'
+}))
+await page.click('#navToggle')
+await wait(700)
+check('móvil: menú abre', await page.evaluate(() => {
+  const l = document.getElementById('navLinks')
+  return l.classList.contains('is-open') && l.getBoundingClientRect().height > 100
+}))
+const overflow = await page.evaluate(
+  () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+)
+check('móvil: sin scroll horizontal', overflow <= 1, `overflow=${overflow}px`)
+
+check('sin errores de consola', errores.length === 0, errores.slice(0, 4).join(' | '))
+if (warnings.length) console.log(`\n(${warnings.length} warnings: ${warnings.slice(0, 3).join(' | ')})`)
+
+const fallos = results.filter((r) => !r.pass)
+console.log(`\n===== ${results.length - fallos.length}/${results.length} checks OK =====`)
+
+await browser.close()
+process.exit(fallos.length ? 1 : 0)
