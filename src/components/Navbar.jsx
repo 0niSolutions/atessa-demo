@@ -72,9 +72,7 @@ export default function Navbar() {
           </nav>
 
           <div className="nav__right">
-            <a className="nav__tel" href={CONTACTO.telHref}>
-              {CONTACTO.tel}
-            </a>
+          
             <button
               className={`nav__toggle${open ? ' is-open' : ''}`}
               id="navToggle"

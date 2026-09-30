@@ -321,9 +321,7 @@ p {
   background: rgba(14, 18, 28, 0.42);
   cursor: pointer;
 }
-body.nav-open {
-  overflow: hidden;
-}
+
 
 /* ---------- Hero ---------- */
 .hero {
