@@ -160,6 +160,36 @@ check('móvil: menú abre', await page.evaluate(() => {
   const l = document.getElementById('navLinks')
   return l.classList.contains('is-open') && l.getBoundingClientRect().height > 100
 }))
+check('móvil: backdrop presente', await page.evaluate(() => {
+  return document.querySelector('.nav__backdrop') !== null
+}))
+check('móvil: hamburguesa se convierte en X', await page.evaluate(() => {
+  const b = document.getElementById('navToggle')
+  return b.classList.contains('is-open') && b.getAttribute('aria-label') === 'Cerrar menú'
+}))
+await page.click('#navLinks .nav__link')
+await wait(700)
+check('móvil: menú cierra al tocar un enlace', await page.evaluate(() => {
+  const l = document.getElementById('navLinks')
+  return !l.classList.contains('is-open') && l.getBoundingClientRect().height === 0
+}))
+check('móvil: backdrop desaparece al cerrar', await page.evaluate(() => {
+  return document.querySelector('.nav__backdrop') === null
+}))
+check('móvil: body desbloquea scroll al cerrar', await page.evaluate(() => {
+  return !document.body.classList.contains('nav-open')
+}))
+await page.click('#navToggle')
+await wait(700)
+check('móvil: menú abre de nuevo', await page.evaluate(() => {
+  return document.getElementById('navLinks').classList.contains('is-open')
+}))
+await page.keyboard.press('Escape')
+await wait(500)
+check('móvil: Escape cierra el menú', await page.evaluate(() => {
+  const l = document.getElementById('navLinks')
+  return !l.classList.contains('is-open') && l.getBoundingClientRect().height === 0
+}))
 const overflow = await page.evaluate(
   () => document.documentElement.scrollWidth - document.documentElement.clientWidth
 )

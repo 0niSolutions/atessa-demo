@@ -289,13 +289,40 @@ p {
   border: 0;
   padding: 8px;
   cursor: pointer;
+  z-index: 1;
 }
-.nav__toggle span {
+.nav__toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.nav__toggle .nav__bar {
   width: 24px;
   height: 2px;
   background: var(--ink);
   border-radius: 2px;
   display: block;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s;
+}
+.nav__toggle.is-open .nav__bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.nav__toggle.is-open .nav__bar:nth-child(2) {
+  opacity: 0;
+}
+.nav__toggle.is-open .nav__bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+/* Fondo oscuro detrás del menú móvil abierto */
+.nav__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: rgba(14, 18, 28, 0.42);
+  cursor: pointer;
+}
+body.nav-open {
+  overflow: hidden;
 }
 
 /* ---------- Hero ---------- */
@@ -1187,13 +1214,27 @@ p {
     gap: 0;
     background: #fff;
     border-bottom: 1px solid var(--line);
-    padding: 10px 24px 24px;
+    border-bottom-width: 0;
+    padding: 0 24px;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    visibility: hidden;
+    transition:
+      max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      padding 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      border-bottom-width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 0s 0.35s;
   }
   .nav__links.is-open {
-    max-height: 440px;
+    max-height: min(440px, calc(100dvh - 74px));
+    padding: 10px 24px 24px;
+    border-bottom-width: 1px;
+    visibility: visible;
+    box-shadow: 0 24px 40px -24px rgba(14, 18, 28, 0.35);
+    transition:
+      max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      padding 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      border-bottom-width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .nav__link {
     padding: 14px 0;
