@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { CONTACTO, IG_FOTOS, unsplash } from '../data'
+import { CONTACTO, IG_FOTOS, SIZES_TILE, srcSet, unsplash } from '../data'
 import { EASE, listParent, viewportOnce } from '../animations'
 import { Icono } from './Icons'
 
@@ -50,8 +50,13 @@ export default function Instagram() {
             >
               <motion.img
                 src={unsplash(id, 500)}
+                srcSet={srcSet(id, [300, 500, 800])}
+                sizes={SIZES_TILE}
+                width="500"
+                height="500"
                 alt={`Publicación de ${CONTACTO.instagramUser}`}
                 loading="lazy"
+                decoding="async"
                 variants={{ hover: { scale: 1.1 } }}
                 transition={{ duration: 0.5, ease: EASE }}
               />

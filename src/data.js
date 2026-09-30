@@ -1,6 +1,17 @@
 export const unsplash = (id, w = 800, q = 80) =>
   `https://images.unsplash.com/photo-${id}?w=${w}&q=${q}&auto=format&fit=crop`
 
+/* srcSet responsive: en mobile el navegador baja 400px en vez de 800px.
+   Con 9 cards + 12 tiles de Instagram son ~21 imágenes; sin esto la red móvil
+   se satura y varias quedan en pending. */
+export const srcSet = (id, widths, q = 80) =>
+  widths
+    .map((w) => `https://images.unsplash.com/photo-${id}?w=${w}&q=${q}&auto=format&fit=crop ${w}w`)
+    .join(', ')
+
+export const SIZES_CARD = '(max-width: 560px) 92vw, (max-width: 1024px) 45vw, 380px'
+export const SIZES_TILE = '(max-width: 560px) 30vw, (max-width: 1024px) 22vw, 190px'
+
 export const CONTACTO = {
   direccion: 'Av. Jujuy 442, Piso 3',
   ciudad: 'Salta Capital, Salta',

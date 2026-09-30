@@ -70,23 +70,64 @@ await page.evaluate(() => window.scrollTo(0, 0))
 await wait(400)
 
 // Filtro del portafolio
+const visPantalla = () =>
+  page.$$eval('.pcard', (cs) => {
+    const enPantalla = cs.filter((c) => {
+      const r = c.getBoundingClientRect()
+      return r.bottom > 0 && r.top < window.innerHeight
+    })
+    return {
+      n: cs.length,
+      enPantalla: enPantalla.length,
+      visibles: enPantalla.filter((c) => getComputedStyle(c).opacity !== '0').length,
+    }
+  })
+
 await page.click('.filter:nth-child(3)')
-await wait(1000)
+await wait(1200)
 check('filtro "Departamentos"', (await t('.pcard')) === 2, `${await t('.pcard')} tarjetas`)
 const activo = await page.$eval('.filter.is-active .filter__txt', (n) => n.textContent)
 check('píldora activa correcta', activo.trim() === 'Departamentos', activo.trim())
+let v = await visPantalla()
+check('filtro: las tarjetas en pantalla se animan', v.visibles === v.enPantalla, `${v.visibles}/${v.enPantalla}`)
 
 await page.click('.filter:nth-child(2)')
-await wait(1000)
+await wait(1200)
 check('filtro "Residencial"', (await t('.pcard')) === 4, `${await t('.pcard')} tarjetas`)
+v = await visPantalla()
+check('filtro: se animan también tras cambiar', v.visibles === v.enPantalla, `${v.visibles}/${v.enPantalla}`)
 
 await page.click('.filter:nth-child(5)')
-await wait(900)
+await wait(1200)
 check('filtro "Comercial"', (await t('.pcard')) === 2, `${await t('.pcard')} tarjetas`)
+v = await visPantalla()
+check('filtro: sigue animando', v.visibles === v.enPantalla, `${v.visibles}/${v.enPantalla}`)
 
 await page.click('.filter:nth-child(1)')
-await wait(900)
+await wait(1200)
 check('vuelta a "Todos"', (await t('.pcard')) === 9, `${await t('.pcard')} tarjetas`)
+v = await visPantalla()
+check('filtro: "Todos" animado', v.visibles === v.enPantalla, `${v.visibles}/${v.enPantalla}`)
+
+// Recorrer toda la página: nada debe quedarse en opacity 0 por un whileInView mal configurado
+await page.evaluate(() => window.scrollTo(0, 0))
+await wait(400)
+const alturaTotal = await page.evaluate(() => document.body.scrollHeight)
+for (let y = 0; y < alturaTotal; y += 400) {
+  await page.evaluate((y) => window.scrollTo(0, y), y)
+  await wait(140)
+}
+await wait(1500)
+const ocultas = await page.evaluate(() =>
+  [...document.querySelectorAll('.pcard, .card-svc, .quote, .ig, .pillar, .inv__list li')].filter(
+    (c) => getComputedStyle(c).opacity !== '0'
+  ).length
+)
+const totalItems = await page.$$eval(
+  '.pcard, .card-svc, .quote, .ig, .pillar, .inv__list li',
+  (x) => x.length
+)
+check('todo se revela al recorrer la página', ocultas === totalItems, `${ocultas}/${totalItems}`)
 
 // Validación del formulario
 await page.evaluate(() => document.getElementById('contacto').scrollIntoView())

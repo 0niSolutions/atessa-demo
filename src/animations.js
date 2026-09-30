@@ -56,6 +56,10 @@ export const listChild = {
   },
 }
 
-/* Config común para mientrasInView */
-export const viewportOnce = { once: true, amount: 0.2, margin: '0px 0px -60px 0px' }
-export const viewportSoft = { once: true, amount: 0.12, margin: '0px 0px -40px 0px' }
+/* Config común para mientrasInView.
+   amount: 0 (no fraccional) a propósito: un contenedor de cards mide miles de px
+   en mobile y un amount fraccional (0.12) es IMPOSIBLE de cumplir si el viewport
+   es más bajo que ese porcentaje — el observer nunca dispara y todo queda en
+   opacity: 0. Con amount: 0 dispara al primer pixel visible. */
+export const viewportOnce = { once: true, amount: 0, margin: '0px 0px -60px 0px' }
+export const viewportSoft = { once: true, amount: 0, margin: '0px 0px -40px 0px' }

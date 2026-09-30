@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
-import { CATEGORIAS, PROYECTOS, unsplash } from '../data'
-import { EASE, listParent, viewportOnce } from '../animations'
+import { CATEGORIAS, PROYECTOS, SIZES_CARD, srcSet, unsplash } from '../data'
+import { EASE, viewportOnce } from '../animations'
 import { Icono } from './Icons'
 
 const ICONOS_META = [Icono.m2, Icono.habitacion, Icono.cochera]
@@ -48,38 +48,42 @@ export default function Projects() {
           </div>
         </div>
 
-        <motion.div
-          className="grid"
-          layout
-          variants={listParent(0.07)}
-          initial="hidden"
-          whileInView="show"
-          viewport={viewportOnce}
-        >
-          <AnimatePresence mode="popLayout">
-            {lista.map((p) => (
+        {/*
+          Cada tarjeta se revela con su propio whileInView + delay por índice, en
+          vez de heredar la variante del contenedor. Si el stagger viviera en el
+          padre, al cambiar de filtro las tarjetas nuevas montarían con la
+          etiqueta "hidden" y el padre ya habría disparado su whileInView
+          (once: true) → quedaban en opacity: 0 para siempre.
+        */}
+        <motion.div className="grid" layout>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {lista.map((p, i) => (
               <MotionCard
                 key={p.id}
                 layout
                 className="pcard"
-                variants={{
-                  hidden: { opacity: 0, y: 26, scale: 0.97 },
-                  show: {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1,
-                    transition: { duration: 0.5, ease: EASE },
-                  },
-                  exit: {
-                    opacity: 0,
-                    scale: 0.95,
-                    transition: { duration: 0.28, ease: EASE },
-                  },
+                initial={{ opacity: 0, y: 26, scale: 0.97 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.25 } }}
+                viewport={viewportOnce}
+                transition={{
+                  duration: 0.5,
+                  ease: EASE,
+                  delay: Math.min(i * 0.07, 0.35),
                 }}
                 whileHover={{ y: -7, transition: { duration: 0.28, ease: EASE } }}
               >
                 <div className="pcard__media">
-                  <img src={unsplash(p.img, 800)} alt={`${p.nombre} — ${p.catLabel}`} loading="lazy" />
+                  <img
+                    src={unsplash(p.img, 800)}
+                    srcSet={srcSet(p.img, [400, 700, 1100])}
+                    sizes={SIZES_CARD}
+                    width="800"
+                    height="600"
+                    alt={`${p.nombre} — ${p.catLabel} en ${p.zona}`}
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <motion.span
                     className="pcard__tag"
                     initial={{ opacity: 0, y: -10 }}
